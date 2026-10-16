@@ -1,0 +1,1351 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trenažér ČNB – hra</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1F5; --surface:#FFFFFF; --ink:#16202A; --muted:#5A6877; --line:#D3DBE3;
+  --accent:#1D4E89; --accent-ink:#FFFFFF; --accent-soft:#E2EBF6;
+  --ok:#1E7549; --ok-soft:#DFF2E7; --bad:#B42318; --bad-soft:#FBE6E3; --empty:#DCE3EA;
+  --serif:"Literata", Georgia, "Times New Roman", serif;
+  --sans:"Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F151C; --surface:#18212B; --ink:#E5ECF2; --muted:#94A3B1; --line:#2B3744;
+    --accent:#7DAEEB; --accent-ink:#0F151C; --accent-soft:#1D2D40;
+    --ok:#5BC68C; --ok-soft:#173326; --bad:#F2887E; --bad-soft:#3A1E1C; --empty:#26313D;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+a{color:var(--accent)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:860px;margin:0 auto;padding:20px 18px 64px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px;min-height:40px}
+.back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:600;color:var(--muted);padding:6px 10px 6px 4px;border-radius:8px}
+.back:hover{color:var(--ink);background:var(--surface)}
+h1{font-family:var(--serif);font-weight:600;font-size:2rem;line-height:1.2;margin:.2em 0 .3em}
+h2{font-size:1.15rem;margin:1.6em 0 .6em}
+.lead{color:var(--muted);max-width:60ch;margin:0 0 1.5em}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+
+/* exam list */
+.exams{display:grid;gap:14px}
+.exam{display:grid;grid-template-columns:1fr auto;gap:6px 18px;align-items:center;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:6px;padding:18px 20px}
+.exam:hover{border-color:var(--accent)}
+.exam h3{margin:0;font-family:var(--serif);font-weight:600;font-size:1.3rem;line-height:1.25}
+.exam .meta{grid-column:1/-1;color:var(--muted);font-size:.9rem}
+.exam .pct{font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent)}
+.bar{grid-column:1/-1;display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--empty)}
+.bar i{display:block;height:100%}
+.bar .g{background:var(--ok)} .bar .r{background:var(--bad)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--line);margin:8px 0 18px;overflow-x:auto}
+.tabs a{padding:10px 14px;text-decoration:none;color:var(--muted);font-weight:600;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.tabs a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
+.stats{display:flex;flex-wrap:wrap;gap:8px 28px;margin:0 0 6px;font-variant-numeric:tabular-nums}
+.stats b{font-size:1.25rem}
+
+/* rows */
+.rows{display:grid;gap:8px}
+.row{display:grid;grid-template-columns:1fr auto;gap:6px 16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 16px;text-decoration:none;color:inherit}
+.row:hover{border-color:var(--accent)}
+.row .n{font-weight:600}
+.row .c{color:var(--muted);font-size:.875rem;font-variant-numeric:tabular-nums;text-align:right}
+
+/* block tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.tile{display:block;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 10px 8px;text-decoration:none;color:inherit;font-variant-numeric:tabular-nums}
+.tile:hover{border-color:var(--accent)}
+.tile .t{font-weight:600;font-size:.95rem}
+.tile .s{font-size:.78rem;color:var(--muted)}
+.tile .bar{margin-top:6px;height:6px}
+.cases .tile .snip{font-family:var(--serif);font-size:.85rem;color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin:4px 0 2px}
+.cases{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.note{background:var(--accent-soft);border-radius:6px;padding:12px 16px;margin:0 0 14px;font-size:.92rem}
+
+/* question */
+.qhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 16px;margin-bottom:10px}
+.qhead .title{font-weight:700}
+.chips{display:flex;gap:4px;overflow-x:auto;padding:4px 2px 10px;margin:0 0 8px;scrollbar-width:thin}
+.chip{flex:0 0 auto;min-width:34px;height:30px;border-radius:5px;border:1px solid var(--line);background:var(--surface);font-size:.8rem;font-variant-numeric:tabular-nums;cursor:pointer;padding:0 6px}
+.chip.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.chip.bad{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.chip.cur{outline:2px solid var(--accent);outline-offset:1px;font-weight:700}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:22px 22px 18px}
+.qid{font-size:.8rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:8px}
+.qtext{font-family:var(--serif);font-size:1.14rem;line-height:1.6;white-space:pre-line;margin:0 0 6px;max-width:68ch}
+.hint{font-size:.88rem;color:var(--accent);font-weight:600;margin:4px 0 12px}
+.opts{display:grid;gap:8px;margin:14px 0 4px}
+.opt{display:grid;grid-template-columns:30px 1fr;gap:12px;align-items:start;width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--line);border-radius:6px;padding:11px 14px;cursor:pointer;line-height:1.45;white-space:pre-line}
+.opt:hover:not([disabled]){border-color:var(--accent)}
+.opt .l{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:1.5px solid var(--line);font-weight:700;font-size:.85rem;color:var(--muted)}
+.opt.single .l{border-radius:50%}
+.opt.multi .l{border-radius:4px}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.opt[aria-pressed="true"] .l{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.opt[disabled]{cursor:default}
+.opt.is-ok{border-color:var(--ok);background:var(--ok-soft)}
+.opt.is-ok .l{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.is-bad{border-color:var(--bad);background:var(--bad-soft)}
+.opt.is-bad .l{background:var(--bad);border-color:var(--bad);color:#fff}
+.opt.missed{border-style:dashed;border-color:var(--ok)}
+.verdict{font-weight:700;margin:14px 0 4px}
+.verdict.ok{color:var(--ok)} .verdict.bad{color:var(--bad)}
+.expl{border-left:4px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 6px 6px 0;margin-top:10px;font-size:.95rem;white-space:pre-line;max-width:72ch}
+.expl b{display:block;margin-bottom:4px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;align-items:center}
+.btn{border:1.5px solid var(--line);background:var(--surface);border-radius:6px;padding:10px 16px;font-weight:600;cursor:pointer;text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+.btn:hover:not([disabled]){border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--bad)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.spacer{flex:1}
+.last{font-size:.82rem}
+.last.ok{color:var(--ok)} .last.bad{color:var(--bad)}
+
+/* case study */
+.case{font-family:var(--serif);font-size:1.05rem;line-height:1.65;white-space:pre-line;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:6px;padding:18px 20px;margin-bottom:18px}
+.case h2{font-family:var(--sans);margin:0 0 8px;font-size:1rem;color:var(--accent)}
+.cq{margin-bottom:14px}
+.cq .num{font-weight:700;color:var(--muted);font-size:.85rem;margin-bottom:4px}
+details.ctx{margin-bottom:14px}
+details.ctx summary{cursor:pointer;font-weight:600;color:var(--accent);padding:6px 0}
+details.ctx .case{margin:6px 0 0}
+.score{font-size:1.2rem;font-weight:700;margin:6px 0}
+
+/* settings */
+.settings{margin-top:40px;border-top:1px solid var(--line);padding-top:10px}
+.settings label{display:flex;gap:10px;align-items:center;margin:10px 0;cursor:pointer}
+.settings input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:6px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:6px;padding:24px;text-align:center}
+.kbd{font-size:.8rem;color:var(--muted);margin-top:14px}
+@media (max-width:560px){
+  h1{font-size:1.6rem}
+  .card{padding:16px 14px}
+  .qtext{font-size:1.05rem}
+  .wrap{padding:14px 12px 56px}
+  .actions .btn{flex:1 1 auto;justify-content:center}
+  .actions .spacer{display:none}
+  .kbd{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.opt{user-select:text;-webkit-user-select:text}
+.opt[aria-disabled="true"]{cursor:default}
+.opt[aria-disabled="true"]:hover{border-color:inherit}
+.top .dictlink{margin-left:auto}
+.dictlink{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:600;color:var(--accent);padding:6px 12px;border:1.5px solid var(--line);border-radius:999px;background:var(--surface);white-space:nowrap}
+.dictlink:hover{border-color:var(--accent)}
+.homehead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+/* selection button */
+#selbtn{position:absolute;z-index:40;display:none;background:var(--ink);color:var(--bg);border:0;border-radius:6px;padding:8px 12px;font-weight:700;font-size:.9rem;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+#selbtn::before{content:"";position:absolute;left:50%;top:-6px;margin-left:-6px;border:6px solid transparent;border-top:0;border-bottom-color:var(--ink)}
+/* modal */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(10,16,22,.55);display:flex;align-items:flex-end;justify-content:center;padding:16px}
+@media (min-width:600px){.modal{align-items:center}}
+.modal .box{background:var(--surface);color:var(--ink);border-radius:10px;width:100%;max-width:520px;padding:20px;max-height:calc(100% - 20px);overflow:auto;margin-bottom:env(safe-area-inset-bottom,0px)}
+.modal h2{margin:0 0 12px}
+.field{display:block;margin:0 0 12px}
+.field span{display:block;font-size:.85rem;font-weight:600;color:var(--muted);margin-bottom:4px}
+.field input,.field textarea,.field select,.search{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:6px;padding:9px 11px}
+.field textarea{min-height:70px;resize:vertical}
+.field input:focus,.field textarea:focus,.search:focus{outline:none;border-color:var(--accent)}
+.ctxline{font-family:var(--serif);font-size:.9rem;color:var(--muted);border-left:3px solid var(--line);padding-left:10px;margin:0 0 12px}
+.ext{font-size:.85rem;display:flex;flex-wrap:wrap;gap:4px 14px;margin:-4px 0 12px}
+/* dictionary list */
+.words{display:grid;gap:8px;margin-top:12px}
+.word{display:grid;grid-template-columns:1fr auto;gap:2px 12px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.word .cs{font-weight:700;font-family:var(--serif);font-size:1.08rem}
+.word .tr{grid-column:1}
+.word .ex{grid-column:1/-1;font-size:.84rem;color:var(--muted);font-family:var(--serif);margin-top:4px}
+.word .btns{grid-row:1/3;grid-column:2;display:flex;gap:4px;align-items:start}
+.iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:4px 9px;cursor:pointer;font-size:.85rem}
+.iconbtn:hover{border-color:var(--accent)}
+.known{font-size:.75rem;color:var(--ok);font-weight:600}
+/* highlight of saved words */
+mark.dw{background:none;color:inherit;border-bottom:2px dotted var(--accent);position:relative;cursor:help}
+mark.dw:hover::after,mark.dw:focus::after{content:attr(data-tr);position:absolute;left:0;bottom:calc(100% + 6px);z-index:30;background:var(--ink);color:var(--bg);font-family:var(--sans);font-size:.85rem;font-weight:600;line-height:1.35;padding:6px 9px;border-radius:5px;width:max-content;max-width:260px;white-space:normal;pointer-events:none}
+mark.dw:focus{outline:none}
+/* flashcards */
+.flash{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:34px 22px;text-align:center;min-height:220px;display:flex;flex-direction:column;justify-content:center;gap:14px}
+.flash .cs{font-family:var(--serif);font-size:1.7rem;font-weight:600;line-height:1.25}
+.flash .tr{font-size:1.25rem;color:var(--accent);font-weight:600}
+.flash .ex{font-family:var(--serif);font-size:.9rem;color:var(--muted);max-width:60ch;margin:0 auto}
+.bq{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px 12px;margin-bottom:10px}
+.bq .qid{margin-bottom:6px}
+.bq .qtext{font-size:1.05rem;margin-bottom:10px}
+.ans{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+.ans li{display:grid;grid-template-columns:24px 1fr;gap:8px;align-items:start;padding:6px 10px;border-radius:5px;line-height:1.45;white-space:pre-line}
+.ans .l{font-weight:700;font-size:.85rem;color:var(--muted);padding-top:1px}
+.ans li.ok{background:var(--ok-soft);color:var(--ink);font-weight:600;box-shadow:inset 3px 0 0 var(--ok)}
+.ans li.ok .l{color:var(--ok);font-size:0}
+.ans li.ok .l::before{content:"✓";font-size:.95rem}
+.hideans .bq:not(.shown) .ans li.ok .l{font-size:.85rem}
+.hideans .bq:not(.shown) .ans li.ok .l::before{content:none}
+.ans li:not(.ok){color:var(--muted)}
+.bq details{margin-top:8px}
+.bq summary{cursor:pointer;font-weight:600;color:var(--accent);font-size:.9rem;padding:4px 0}
+.bq details .expl{margin-top:6px}
+/* self-test mode: answers hidden until the card is tapped */
+.hideans .bq:not(.shown) .ans li.ok{background:none;box-shadow:none;font-weight:400;color:var(--muted)}
+.hideans .bq:not(.shown) .ans li.ok .l{color:var(--muted)}
+.hideans .bq:not(.shown) details{display:none}
+.hideans .bq{cursor:pointer}
+.hideans .bq:not(.shown)::after{content:"Klepnutím zobrazíte správnou odpověď";display:block;font-size:.8rem;color:var(--accent);font-weight:600;margin-top:8px}
+.bcase{margin:26px 0 12px}
+.pager{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
+.pager a{min-width:44px;text-align:center;padding:7px 10px;border:1px solid var(--line);border-radius:5px;background:var(--surface);text-decoration:none;color:var(--ink);font-variant-numeric:tabular-nums;font-size:.88rem}
+.pager a[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.btools{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;margin:0 0 12px}
+.btools label{display:flex;gap:8px;align-items:center;cursor:pointer;font-weight:600}
+.btools input{width:18px;height:18px;accent-color:var(--accent)}
+@media print{.top,.tabs,.btools,.pager,.dictlink,#selbtn,.toast{display:none!important}.bq{break-inside:avoid;border-color:#bbb}body{background:#fff}}
+.typestats{margin:0 0 12px}
+.typestats .stats b{font-size:1.05rem}
+/* ===================== GAME ===================== */
+:root{--gold:#D4A22B;--gold-hi:#F7DE8E;--gold-lo:#8C6512;--gold-ink:#5B4108}
+.wrap.wide{max-width:1120px}
+/* medals */
+.medals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:6px 0 22px}
+@media (max-width:640px){.medals{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
+.medal{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 10px 14px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;position:relative}
+.medal.won{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.medal svg{width:100%;max-width:150px;height:auto;display:block;overflow:visible;transition:filter .6s}
+.medal:not(.won) svg{filter:grayscale(1) contrast(.75) brightness(1.15);opacity:.5}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .medal:not(.won) svg{filter:grayscale(1) brightness(.75);opacity:.55}}
+.medal .mname{font-family:var(--serif);font-weight:600;font-size:1.08rem;line-height:1.2}
+.medal .mdate{font-size:.8rem;color:var(--gold-lo);font-weight:600}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .medal .mdate{color:var(--gold-hi)}}
+.medal .pass{border:1.5px solid var(--gold);background:var(--surface);color:var(--gold-ink);font-weight:700;border-radius:999px;padding:7px 18px;cursor:pointer}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .medal .pass{color:var(--gold-hi)}}
+.medal .pass:hover{background:var(--gold);color:#fff;border-color:var(--gold)}
+.medal.popping svg{animation:medalpop 1.1s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes medalpop{0%{transform:scale(.6) rotateY(0)}55%{transform:scale(1.14) rotateY(360deg)}100%{transform:scale(1) rotateY(360deg)}}
+.medal.won .shine{animation:shine 7s ease-in-out infinite}
+.medal.popping .shine{animation:shine 1.2s ease-in-out .5s 1}
+@keyframes shine{0%,82%{transform:translateX(-140px)}100%{transform:translateX(160px)}}
+.allwon{text-align:center;font-family:var(--serif);font-size:1.15rem;font-weight:600;color:var(--gold-ink);background:linear-gradient(90deg,transparent,rgba(212,162,43,.18),transparent);padding:10px;margin:-8px 0 18px;border-radius:8px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .allwon{color:var(--gold-hi)}}
+/* daily strip */
+.daily{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 22px}
+@media (max-width:640px){.daily{grid-template-columns:1fr}}
+.dcard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+.dcard .big{font-size:1.35rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.dcard .sub{font-size:.82rem;color:var(--muted)}
+.ring{width:46px;height:46px;flex:0 0 auto}
+.ring circle{fill:none;stroke-width:6}
+.ring .bg{stroke:var(--empty)} .ring .fg{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset 1.2s ease}
+.ring.done .fg{stroke:var(--ok)}
+.flame{width:30px;height:38px;flex:0 0 auto}
+.flame.off{filter:grayscale(1);opacity:.35}
+/* exam cards: level */
+.exam .lvlchip{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:.88rem;font-weight:600;color:var(--accent)}
+.exam .lvlchip svg{width:16px;height:24px}
+/* flask */
+.exgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.flaskcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;grid-template-columns:96px 1fr;gap:4px 14px;align-items:center}
+.flaskcard .fl{grid-row:1/5}
+.flaskcard .fl svg{width:96px;height:auto;display:block;overflow:visible}
+.lvlno{font-size:.8rem;font-weight:700;color:var(--muted)}
+.lvlname{font-family:var(--serif);font-weight:600;font-size:1.3rem;line-height:1.15}
+.lvlpct{font-size:.95rem}
+.lvlpct b{font-size:1.5rem;font-variant-numeric:tabular-nums;color:var(--accent)}
+.lvlnext{font-size:.82rem;color:var(--muted)}
+.ladder{grid-column:1/-1;margin-top:6px}
+.ladder summary{cursor:pointer;font-weight:600;color:var(--accent);font-size:.88rem;padding:4px 0}
+.ladder ol{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:2px}
+.ladder li{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;font-size:.86rem;padding:4px 6px;border-radius:5px;color:var(--muted)}
+.ladder li .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--line)}
+.ladder li.got{color:var(--ink)} .ladder li.got .dot{background:var(--lc);border-color:var(--lc)}
+.ladder li.now{background:var(--accent-soft);color:var(--ink);font-weight:700}
+.ladder li .th{font-variant-numeric:tabular-nums;font-size:.78rem}
+@media (min-width:920px){
+  .exgrid{grid-template-columns:minmax(0,1fr) 230px;gap:28px;align-items:start}
+  .exgrid .flaskcard{grid-column:2;grid-row:1;position:sticky;top:16px;grid-template-columns:1fr;text-align:center;justify-items:center;padding:18px 16px}
+  .flaskcard .fl{grid-row:auto}
+  .flaskcard .fl svg{width:150px}
+  .exgrid .exmain{grid-column:1;grid-row:1}
+  .ladder{text-align:left;width:100%}
+}
+.liq{transition:transform 1.9s cubic-bezier(.22,.9,.25,1)}
+.wave{animation:wave 3.2s linear infinite}
+.wave.back{animation-duration:5s;animation-direction:reverse;opacity:.55}
+@keyframes wave{from{transform:translateX(0)}to{transform:translateX(120px)}}
+.bub{animation:bub 3.6s ease-in infinite;opacity:0}
+@keyframes bub{0%{transform:translateY(0);opacity:0}15%{opacity:.75}100%{transform:translateY(-46px);opacity:0}}
+/* mini flask (question view) */
+.top .miniflask{margin-left:auto}
+.top .miniflask + .dictlink{margin-left:8px}
+.miniflask{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:var(--ink);font-weight:700;font-size:.85rem;padding:4px 12px 4px 8px;border:1.5px solid var(--line);border-radius:999px;background:var(--surface);font-variant-numeric:tabular-nums;white-space:nowrap}
+.miniflask:hover{border-color:var(--accent)}
+.miniflask svg{width:16px;height:24px;overflow:visible}
+.miniflask .mp{color:var(--muted);font-weight:600}
+.miniflask.bump{animation:bump .6s ease}
+@keyframes bump{40%{transform:scale(1.12)}}
+@media (max-width:560px){.miniflask .mp{display:none}}
+/* combo */
+.combo{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:.85rem;color:var(--gold-ink);background:rgba(212,162,43,.16);border-radius:999px;padding:3px 10px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .combo{color:var(--gold-hi)}}
+.combo.bump{animation:bump .6s ease}
+.qhead .right{display:flex;gap:10px;align-items:center}
+/* level-up overlay */
+.levelup{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;pointer-events:auto;background:rgba(10,16,22,.35)}
+.levelup .lu{background:var(--surface);border:2px solid var(--gold);border-radius:16px;padding:22px 28px;text-align:center;max-width:300px;animation:luin .55s cubic-bezier(.2,.9,.3,1.3)}
+.levelup .lu svg{width:70px;height:auto;margin:0 auto 6px;display:block;overflow:visible}
+.levelup .t1{font-size:.85rem;font-weight:700;color:var(--gold-ink);letter-spacing:.02em}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .levelup .t1{color:var(--gold-hi)}}
+.levelup .t2{font-family:var(--serif);font-size:1.6rem;font-weight:600;line-height:1.2;margin:4px 0}
+.levelup .t3{font-size:.9rem;color:var(--muted)}
+.levelup.out{animation:fadeout .35s forwards}
+@keyframes luin{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes fadeout{to{opacity:0}}
+/* action toast */
+.atoast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:55;background:var(--ink);color:var(--bg);padding:8px 8px 8px 18px;border-radius:8px;font-weight:600;display:flex;gap:14px;align-items:center;max-width:calc(100% - 32px)}
+.atoast button{background:transparent;border:1.5px solid currentColor;color:inherit;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer}
+#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:70}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap" id="app" aria-live="polite"></main>
+<div class="toast" id="toast" role="status"></div>
+<button id="selbtn" type="button">+ Do slovníku</button>
+<script>
+(function(){
+'use strict';
+var EXAMS = [
+  {key:'poj', title:'Životní pojištění a pojištění velkých pojistných rizik', short:'Pojištění', s:1112, m:398, c:94, cq:470},
+  {key:'inv', title:'Investiční zprostředkovatel', short:'Investice', s:544, m:197, c:50, cq:250},
+  {key:'uve', title:'Úvěry – souhrnná zkouška pro všechny skupiny úvěrů', short:'Úvěry', s:699, m:179, c:69, cq:345},
+  {key:'pen', title:'Penze', short:'Penze', s:516, m:0, c:10, cq:50}
+];
+var BLOCK = 25;
+var TYPE_NAMES = {s:'Jedna správná odpověď', m:'Více správných odpovědí', c:'Případová studie'};
+var LETTERS = 'ABCDEF';
+var STORE_KEY = 'cnb-trenazer-v1';
+var app = document.getElementById('app');
+var keyHandler = null;
+
+/* ---------- storage ---------- */
+var state = load();
+function blank(){ return {v:1, settings:{shuffle:false}, ex:{}}; }
+function load(){
+  try{
+    var s = JSON.parse(localStorage.getItem(STORE_KEY));
+    if(s && s.v===1){ s.ex = s.ex||{}; s.settings = s.settings||{shuffle:false}; return s; }
+  }catch(e){}
+  return blank();
+}
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch(e){ toast('Postup se nepodařilo uložit – prohlížeč blokuje úložiště.'); }
+}
+function exState(k){ if(!state.ex[k]) state.ex[k] = {r:{}, pos:{}}; return state.ex[k]; }
+// r[qid] = [attempts, wrong, lastOk(1/0)]
+function record(k, qid, ok){
+  var r = exState(k).r, x = r[qid] || [0,0,0];
+  x[0]++; if(!ok) x[1]++; x[2] = ok?1:0; r[qid] = x;
+  var g = game(), dk = dayKey(); g.days[dk] = (g.days[dk]||0)+1; save();
+}
+
+/* ---------- data loading ---------- */
+var loading = {};
+function getData(k){
+  if(window.CNB_DATA && window.CNB_DATA[k]) return Promise.resolve(window.CNB_DATA[k]);
+  if(loading[k]) return loading[k];
+  loading[k] = new Promise(function(res, rej){
+    var s = document.createElement('script');
+    s.src = 'data/' + k + '.js';
+    s.onload = function(){ window.CNB_DATA && window.CNB_DATA[k] ? res(window.CNB_DATA[k]) : rej(); };
+    s.onerror = function(){ delete loading[k]; rej(); };
+    document.head.appendChild(s);
+  });
+  return loading[k];
+}
+
+/* ---------- helpers ---------- */
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function examMeta(k){ for(var i=0;i<EXAMS.length;i++) if(EXAMS[i].key===k) return EXAMS[i]; return null; }
+function stat(k, ids){
+  var r = exState(k).r, a=0, g=0;
+  for(var i=0;i<ids.length;i++){ var x = r[ids[i]]; if(x){ a++; if(x[2]) g++; } }
+  return {n:ids.length, a:a, g:g, b:a-g};
+}
+function bar(s){
+  if(!s.n) return '<div class="bar"></div>';
+  return '<div class="bar" aria-hidden="true"><i class="g" style="width:'+(s.g/s.n*100)+'%"></i><i class="r" style="width:'+(s.b/s.n*100)+'%"></i></div>';
+}
+function toast(msg){
+  var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove('show'); }, 2600);
+}
+function sameSet(a, b){ if(a.length!==b.length) return false; var x=a.slice().sort(), y=b.slice().sort(); for(var i=0;i<x.length;i++) if(x[i]!==y[i]) return false; return true; }
+function orderMode(){ var o = state.settings.order; if(o==='fixed'||o==='random'||o==='pdf') return o; return state.settings.shuffle ? 'random' : 'fixed'; }
+function seeded(str){ var h = 2166136261; for(var i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return function(){ h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h>>>0) % 1000000) / 1000000; }; }
+function perm(n, qid, mode){
+  mode = mode || orderMode();
+  var p=[]; for(var i=0;i<n;i++) p.push(i);
+  if(mode==='pdf') return p;
+  var rnd = mode==='random' ? Math.random : seeded('cnb:'+qid);
+  for(var j=n-1;j>0;j--){ var k=Math.floor(rnd()*(j+1)); var t=p[j]; p[j]=p[k]; p[k]=t; }
+  return p;
+}
+function cp(a){ return a ? a.slice() : null; }
+function plural(n, one, few, many){ return n===1?one:(n>=2&&n<=4?few:many); }
+
+/* ---------- sets ---------- */
+var errSnapshot = {};
+function typeIdx(d, t){ var out=[]; d.questions.forEach(function(q,i){ if(q.t===t) out.push(i); }); return out; }
+function errList(k, d, onlyLastWrong){
+  var r = exState(k).r, out=[];
+  d.questions.forEach(function(q,i){ var x=r[q.id]; if(x && x[1]>0 && (!onlyLastWrong || !x[2])) out.push(i); });
+  out.sort(function(a,b){ var x=r[d.questions[a].id], y=r[d.questions[b].id]; return (y[1]-x[1]) || (x[2]-y[2]) || (a-b); });
+  return out;
+}
+function getSet(k, d, key){
+  var m;
+  if((m = /^t-(\d+)$/.exec(key))){
+    var t = +m[1], list=[]; d.questions.forEach(function(q,i){ if(q.tp===t) list.push(i); });
+    return {title:d.topics[t], list:list, back:'topics'};
+  }
+  if((m = /^([sm])-(\d+)$/.exec(key))){
+    var all = typeIdx(d, m[1]), b = +m[2], from = b*BLOCK, to = Math.min(all.length, from+BLOCK);
+    return {title:TYPE_NAMES[m[1]]+', blok '+(b+1)+' ('+(from+1)+'–'+to+')', list:all.slice(from,to), back:'types',
+      prev: b>0 ? m[1]+'-'+(b-1) : null, next: to<all.length ? m[1]+'-'+(b+1) : null};
+  }
+  if(key==='err' || key==='err-last'){
+    var sk = k+key;
+    if(!errSnapshot[sk]) errSnapshot[sk] = errList(k, d, key==='err-last');
+    return {title: key==='err' ? 'Opakování chyb' : 'Opakování chyb – naposledy špatně', list:errSnapshot[sk], back:'errors'};
+  }
+  return null;
+}
+
+/* ---------- router ---------- */
+window.addEventListener('hashchange', route);
+function route(){
+  keyHandler = null;
+  app.classList.remove('wide');
+  var h = location.hash.replace(/^#\/?/, '').split('/');
+  window.scrollTo(0,0);
+  if(!h[0]) return viewHome();
+  if(h[0]==='slovnik') return h[1]==='karticky' ? viewFlash() : viewDict();
+  if(h[0]==='x' && examMeta(h[1])){
+    var k = h[1];
+    app.innerHTML = '<p class="muted">Načítám otázky…</p>';
+    getData(k).then(function(d){
+      if(h[2]==='set' && h[3]) return viewSet(k, d, h[3], h[4]!=null ? +h[4] : null);
+      if(h[2]==='browse' && h[3]) return viewBrowse(k, d, h[3], +(h[4]||0));
+      if(h[2]==='case' && h[3]!=null) return viewCase(k, d, +h[3]);
+      viewExam(k, d, h[2] || 'topics');
+    }, function(){
+      app.innerHTML = '<div class="empty"><p>Soubor s otázkami <b>data/'+esc(k)+'.js</b> se nepodařilo načíst. Zkontrolujte, že složka <b>data</b> leží vedle souboru index.html.</p><a class="btn" href="#/">Zpět na výběr zkoušky</a></div>';
+    });
+    return;
+  }
+  location.hash = '#/';
+}
+
+/* ---------- home ---------- */
+function viewHome(){
+  var html = '<div class="homehead"><h1>Trenažér zkoušek ČNB</h1>'+dictLinkHtml()+'</div>'+medalsHtml()+dailyHtml()+'<h2>Zkoušky</h2><div class="exams">';
+  EXAMS.forEach(function(e){
+    var total = e.s+e.m+e.cq, r = exState(e.key).r, a=0, g=0;
+    for(var id in r){ a++; if(r[id][2]) g++; }
+    var s = {n:total, a:a, g:g, b:a-g};
+    var parts = [e.s+' s jednou odpovědí'];
+    if(e.m) parts.push(e.m+' s více odpověďmi');
+    parts.push(e.c+' případových studií');
+    html += '<a class="exam" href="#/x/'+e.key+'"><h3>'+esc(e.title)+'</h3><span class="pct">'+Math.floor(g/total*100)+' %</span>'+
+      bar(s)+'<span class="lvlchip">'+miniFlaskSvg(frac(e.key), frac(e.key))+'Úroveň '+(lvlIdx(frac(e.key))+1)+' · '+LEVELS[lvlIdx(frac(e.key))].n+'</span>'+
+      '<span class="meta">'+total+' otázek: '+parts.join(', ')+'. Zodpovězeno '+a+', správně '+g+'.</span></a>';
+  });
+  html += '</div>';
+  html += '<section class="settings"><h2>Nastavení a postup</h2>'+
+    '<label class="field" style="max-width:420px;display:block;cursor:default"><span>Pořadí odpovědí</span><select id="ord">'+
+      [['fixed','Zamíchané (u každé otázky stále stejně)'],['random','Zamíchané pokaždé jinak'],['pdf','Původní, jako v PDF']].map(function(o){ return '<option value="'+o[0]+'"'+(orderMode()===o[0]?' selected':'')+'>'+o[1]+'</option>'; }).join('')+
+    '</select></label>'+
+    '<label class="field" style="max-width:320px;display:block;cursor:default"><span>Jazyk překladu ve slovníku</span><select id="lang">'+
+      LANGS.map(function(l){ return '<option value="'+l[0]+'"'+(tl()===l[0]?' selected':'')+'>'+l[1]+'</option>'; }).join('')+'</select></label>'+
+    '<label class="field" style="max-width:320px;display:block;cursor:default"><span>Denní cíl</span><select id="goal">'+
+      [10,20,30,50,75,100].map(function(n){ return '<option value="'+n+'"'+(game().goal===n?' selected':'')+'>'+n+' otázek denně</option>'; }).join('')+'</select></label>'+
+    '<div class="actions"><button class="btn" id="exp">Stáhnout zálohu postupu</button>'+
+    '<label class="btn" style="margin:0">Nahrát zálohu<input type="file" id="imp" accept="application/json,.json" hidden></label>'+
+    '<button class="btn danger" id="resetAll">Smazat veškerý postup</button>'+
+    (Object.keys(game().passed).length ? '<button class="btn danger" id="resetMedals">Odebrat medaile</button>' : '')+'</div>'+
+    '<p class="small muted">Postup je uložený jen v tomto prohlížeči a zařízení. Záloha se hodí při přechodu na jiný počítač nebo telefon.</p></section>';
+  app.innerHTML = html;
+  document.getElementById('ord').onchange = function(){ state.settings.order = this.value; delete state.settings.shuffle; save(); };
+  document.getElementById('lang').onchange = function(){ state.settings.lang = this.value; save(); };
+  document.getElementById('goal').onchange = function(){ game().goal = +this.value; save(); viewHome(); };
+  bindMedals(); animateRings();
+  var rm = document.getElementById('resetMedals');
+  if(rm) rm.onclick = function(){ if(confirm('Odebrat všechny medaile? Postup v otázkách zůstane.')){ game().passed = {}; save(); viewHome(); } };
+  document.getElementById('exp').onclick = exportProgress;
+  document.getElementById('imp').onchange = importProgress;
+  document.getElementById('resetAll').onclick = function(){
+    if(confirm('Opravdu smazat postup ve všech čtyřech zkouškách? Slovník, medaile a série dnů zůstanou zachovány. Tuto akci nelze vrátit.')){
+      var keepDict = state.dict, keepSet = state.settings, keepGame = state.game; state = blank(); state.dict = keepDict; state.settings = keepSet; state.game = keepGame; game().seen = {};
+      errSnapshot = {}; save(); viewHome(); toast('Postup byl smazán. Slovník zůstal zachován.');
+    }
+  };
+}
+function exportProgress(){
+  var blob = new Blob([JSON.stringify(state)], {type:'application/json'});
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'cnb-trenazer-postup-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+}
+function importProgress(ev){
+  var f = ev.target.files[0]; if(!f) return;
+  var fr = new FileReader();
+  fr.onload = function(){
+    try{
+      var s = JSON.parse(fr.result);
+      if(!s || s.v!==1 || typeof s.ex!=='object') throw 0;
+      if(!confirm('Nahrát zálohu? Současný postup v tomto prohlížeči bude nahrazen.')) return;
+      state = s; state.settings = state.settings||{shuffle:false}; errSnapshot = {}; save(); viewHome(); toast('Záloha byla nahrána.');
+    }catch(e){ toast('Tento soubor není záloha trenažéru.'); }
+  };
+  fr.readAsText(f);
+}
+
+/* ---------- exam overview ---------- */
+function statsBlock(s, extra){
+  return '<div class="stats"><span><b>'+s.a+'</b> / '+s.n+' zodpovězeno</span><span><b>'+(s.a?Math.round(s.g/s.a*100):0)+' %</b> úspěšnost</span><span><b>'+s.b+'</b> naposledy špatně</span>'+(extra||'')+'</div>'+
+    '<div style="margin:8px 0 4px">'+bar(s)+'</div>';
+}
+function viewExam(k, d, tab){
+  var e = examMeta(k), allIds = d.questions.map(function(q){ return q.id; }), s = stat(k, allIds);
+  var html = '<div class="top"><a class="back" href="#/">‹ Všechny zkoušky</a></div>'+
+    '<h1>'+esc(e.title)+'</h1>'+
+    '<div class="exgrid">'+flaskCardHtml(k)+'<div class="exmain">'+
+    statsBlock(s)+
+    '<nav class="tabs">'+
+      tabLink(k,'topics','Podle témat',tab)+tabLink(k,'types','Podle typu otázek',tab)+tabLink(k,'errors','Opakovat chyby',tab)+tabLink(k,'browse','Prohlížení odpovědí',tab)+
+    '</nav>';
+  if(tab==='types') html += typesTab(k, d);
+  else if(tab==='browse') html += browseTab(k, d);
+  else if(tab==='errors') html += errorsTab(k, d);
+  else html += topicsTab(k, d);
+  html += '<section class="settings"><button class="btn danger" id="resetEx">Smazat postup v této zkoušce</button></section></div></div>';
+  app.classList.add('wide');
+  app.innerHTML = html;
+  afterFlaskCard(k);
+  document.getElementById('resetEx').onclick = function(){
+    if(confirm('Opravdu smazat postup ve zkoušce „'+e.short+'“?')){
+      delete state.ex[k]; delete game().seen[k]; delete errSnapshot[k+'err']; delete errSnapshot[k+'err-last']; save(); viewExam(k, d, tab); toast('Postup v této zkoušce byl smazán.');
+    }
+  };
+}
+/* ---------- answer browser ---------- */
+var BROWSE_PAGE = 100;
+var BROWSE_NAMES = {'1':'Otázky s 1 správnou odpovědí','2':'Otázky se 2 správnými odpověďmi','3':'Otázky se 3 správnými odpověďmi','4':'Otázky se 4 správnými odpověďmi','c':'Případové studie'};
+function browseList(d, cat){
+  var out = [];
+  d.questions.forEach(function(q, i){ if(q.t!=='c' && String(q.c.length)===cat) out.push(i); });
+  return out;
+}
+function browseTab(k, d){
+  var html = '<p class="lead">Otázky se správnými odpověďmi pohromadě, jako v PDF, ale rozdělené podle počtu správných odpovědí. Hodí se k učení nazpaměť.</p><div class="rows">';
+  ['1','2','3','4'].forEach(function(cat){
+    var n = browseList(d, cat).length;
+    if(n) html += '<a class="row" href="#/x/'+k+'/browse/'+cat+'"><span class="n">'+BROWSE_NAMES[cat]+'</span><span class="c">'+n+' otázek</span></a>';
+  });
+  html += '<a class="row" href="#/x/'+k+'/browse/c"><span class="n">'+BROWSE_NAMES.c+'</span><span class="c">'+d.cases.length+' studií</span></a>';
+  return html + '</div>';
+}
+function bqHtml(k, d, qi, num){
+  var q = d.questions[qi];
+  var h = '<div class="bq"><div class="qid"><span>'+num+'.</span><span>Otázka č. '+esc(q.id)+'</span></div><p class="qtext">'+esc(q.q)+'</p><ol class="ans">';
+  perm(q.o.length, q.id, orderMode()==='pdf' ? 'pdf' : 'fixed').forEach(function(orig, n){
+    var ok = q.c.indexOf(orig)>=0;
+    h += '<li class="'+(ok?'ok':'')+'"><span class="l">'+LETTERS[n]+'</span><span class="tx">'+esc(q.o[orig])+'</span></li>';
+  });
+  h += '</ol>';
+  if(q.e) h += '<details><summary>Odůvodnění</summary><div class="expl">'+esc(q.e)+'</div></details>';
+  return h + '</div>';
+}
+function viewBrowse(k, d, cat, page){
+  if(!BROWSE_NAMES[cat]){ location.hash = '#/x/'+k+'/browse'; return; }
+  var isCase = cat==='c', units = isCase ? d.cases.map(function(c, i){ return i; }) : browseList(d, cat);
+  var per = isCase ? 10 : BROWSE_PAGE, pages = Math.max(1, Math.ceil(units.length/per));
+  if(!(page>=0 && page<pages)) page = 0;
+  var from = page*per, slice = units.slice(from, from+per);
+  var pager = '';
+  if(pages>1){
+    pager = '<nav class="pager" aria-label="Stránky">';
+    for(var p=0; p<pages; p++){
+      var a = p*per+1, b = Math.min(units.length, (p+1)*per);
+      pager += '<a href="#/x/'+k+'/browse/'+cat+'/'+p+'"'+(p===page?' aria-current="page"':'')+'>'+a+'–'+b+'</a>';
+    }
+    pager += '</nav>';
+  }
+  var hide = !!state.settings.hideAns;
+  var html = '<div class="top"><a class="back" href="#/x/'+k+'/browse">‹ '+esc(examMeta(k).short)+'</a></div>'+
+    '<h1 style="font-size:1.5rem">'+BROWSE_NAMES[cat]+'</h1>'+
+    '<p class="muted">'+units.length+(isCase?' studií':' otázek')+(pages>1?', zobrazeno '+(from+1)+'–'+(from+slice.length):'')+'</p>'+
+    '<div class="btools"><label><input type="checkbox" id="bHide"'+(hide?' checked':'')+'> Skrýt správné odpovědi (zkoušení se)</label>'+
+    '<button class="btn" id="bPrint" type="button">Vytisknout tuto stránku</button></div>'+
+    pager+'<div id="blist"'+(hide?' class="hideans"':'')+'>';
+  if(isCase){
+    slice.forEach(function(ci){
+      var c = d.cases[ci];
+      html += '<div class="case bcase"><h2>Případová studie '+(ci+1)+'</h2>'+esc(c.text)+'</div>';
+      c.qs.forEach(function(qi, n){ html += bqHtml(k, d, qi, n+1); });
+    });
+  } else {
+    slice.forEach(function(qi, n){ html += bqHtml(k, d, qi, from+n+1); });
+  }
+  html += '</div>'+pager;
+  app.innerHTML = html;
+  var list = document.getElementById('blist');
+  document.getElementById('bHide').onchange = function(){
+    state.settings.hideAns = this.checked; save();
+    list.classList.toggle('hideans', this.checked);
+    list.querySelectorAll('.bq.shown').forEach(function(x){ x.classList.remove('shown'); });
+  };
+  document.getElementById('bPrint').onclick = function(){ window.print(); };
+  list.addEventListener('click', function(e){
+    if(!list.classList.contains('hideans')) return;
+    var sel = window.getSelection && window.getSelection();
+    if(sel && sel.toString().trim()) return;
+    var card = e.target.closest('.bq'); if(card) card.classList.add('shown');
+  });
+}
+
+function tabLink(k, id, label, cur){ return '<a href="#/x/'+k+'/'+id+'"'+(cur===id?' aria-current="page"':'')+'>'+label+'</a>'; }
+function topicsTab(k, d){
+  var html = '<p class="note">Témata jsou přiřazena automaticky podle obsahu otázek, proto může být občas některá otázka v příbuzném tématu. Případové studie najdete v části Podle typu otázek.</p><div class="rows">';
+  d.topics.forEach(function(t, i){
+    var ids = []; d.questions.forEach(function(q){ if(q.tp===i) ids.push(q.id); });
+    var s = stat(k, ids);
+    html += '<a class="row" href="#/x/'+k+'/set/t-'+i+'"><span class="n">'+esc(t)+'</span><span class="c">'+s.a+' / '+s.n+'</span>'+bar(s)+'</a>';
+  });
+  return html + '</div>';
+}
+function typesTab(k, d){
+  var html = '';
+  ['s','m'].forEach(function(t){
+    var all = typeIdx(d, t);
+    html += '<h2>'+TYPE_NAMES[t]+' <span class="muted small">('+all.length+' otázek)</span></h2>';
+    if(!all.length){ html += '<p class="note">V této zkoušce nejsou otázky s více správnými odpověďmi.</p>'; return; }
+    html += '<div class="typestats">'+statsBlock(stat(k, all.map(function(i){ return d.questions[i].id; })))+'</div><div class="tiles">';
+    for(var b=0; b*BLOCK<all.length; b++){
+      var sl = all.slice(b*BLOCK, (b+1)*BLOCK), s = stat(k, sl.map(function(i){ return d.questions[i].id; }));
+      html += '<a class="tile" href="#/x/'+k+'/set/'+t+'-'+b+'"><div class="t">Blok '+(b+1)+'</div><div class="s">otázky '+(b*BLOCK+1)+'–'+(b*BLOCK+sl.length)+'<br>'+s.g+' správně z '+s.n+'</div>'+bar(s)+'</a>';
+    }
+    html += '</div>';
+  });
+  var caseIds = [], caseDone = 0;
+  d.cases.forEach(function(c){
+    var ids = c.qs.map(function(qi){ return d.questions[qi].id; }); caseIds = caseIds.concat(ids);
+    if(stat(k, ids).a===ids.length) caseDone++;
+  });
+  html += '<h2>'+TYPE_NAMES.c+' <span class="muted small">('+d.cases.length+' studií, vždy 5 otázek)</span></h2>'+
+    '<div class="typestats">'+statsBlock(stat(k, caseIds), '<span><b>'+caseDone+'</b> / '+d.cases.length+' studií hotovo</span>')+'</div><div class="tiles cases">';
+  d.cases.forEach(function(c, i){
+    var s = stat(k, c.qs.map(function(qi){ return d.questions[qi].id; }));
+    html += '<a class="tile" href="#/x/'+k+'/case/'+i+'"><div class="t">Studie '+(i+1)+'</div><div class="snip">'+esc(c.text.slice(0,160))+'</div><div class="s">'+s.g+' / 5 správně</div>'+bar(s)+'</a>';
+  });
+  return html + '</div>';
+}
+function errorsTab(k, d){
+  var all = errList(k, d, false), last = errList(k, d, true), r = exState(k).r;
+  if(!all.length) return '<div class="empty"><p>Zatím tu nic není. Otázky, ve kterých uděláte chybu, se sem uloží automaticky, seřazené podle počtu chyb.</p></div>';
+  var html = '<p class="lead">Otázky seřazené podle toho, kolikrát jste v nich chybovala.</p><div class="actions" style="margin:0 0 18px">'+
+    '<a class="btn primary" href="#/x/'+k+'/set/err" data-reset="err">Procvičit všechny s chybou ('+all.length+')</a>'+
+    (last.length ? '<a class="btn" href="#/x/'+k+'/set/err-last" data-reset="err-last">Jen naposledy špatně ('+last.length+')</a>' : '')+
+    '</div><div class="rows">';
+  all.slice(0, 40).forEach(function(qi, pos){
+    var q = d.questions[qi], x = r[q.id];
+    html += '<a class="row" href="#/x/'+k+'/set/err/'+pos+'" data-reset="err"><span>'+esc(q.q.length>150 ? q.q.slice(0,150)+'…' : q.q)+'</span><span class="c">'+x[1]+'× chyba<br>'+(x[2]?'<span class="last ok">naposledy správně</span>':'<span class="last bad">naposledy špatně</span>')+'</span></a>';
+  });
+  if(all.length>40) html += '<p class="muted small">…a dalších '+(all.length-40)+' otázek.</p>';
+  setTimeout(function(){
+    app.querySelectorAll('[data-reset]').forEach(function(a){ a.addEventListener('click', function(){ delete errSnapshot[k+a.getAttribute('data-reset')]; }); });
+  });
+  return html + '</div>';
+}
+
+/* ---------- question set ---------- */
+function viewSet(k, d, key, startPos){
+  var set = getSet(k, d, key);
+  if(!set){ location.hash = '#/x/'+k; return; }
+  var ex = exState(k);
+  if(!set.list.length){
+    app.innerHTML = '<div class="top"><a class="back" href="#/x/'+k+'/'+set.back+'">‹ Zpět</a></div><div class="empty"><p>V této sadě nejsou žádné otázky.</p></div>';
+    return;
+  }
+  var pos = startPos!=null ? startPos : (ex.pos[key] || 0);
+  if(pos >= set.list.length || pos < 0) pos = 0;
+  var cur = {sel:[], checked:false, perm:null, prev:cp(ex.r[d.questions[set.list[pos]].id])};
+
+  function go(p){
+    if(p<0 || p>=set.list.length) return;
+    pos = p; ex.pos[key] = p; save();
+    cur = {sel:[], checked:false, perm:null, prev:cp(ex.r[d.questions[set.list[p]].id])};
+    render(); window.scrollTo(0,0);
+  }
+  function render(){
+    var qi = set.list[pos], q = d.questions[qi], multi = q.c.length>1 || q.t==='m';
+    if(!cur.perm) cur.perm = perm(q.o.length, q.id);
+    var x = cur.prev;
+    var chips = set.list.map(function(i, n){
+      var y = ex.r[d.questions[i].id];
+      return '<button class="chip'+(y?(y[2]?' ok':' bad'):'')+(n===pos?' cur':'')+'" data-go="'+n+'" aria-label="Otázka '+(n+1)+'">'+(n+1)+'</button>';
+    }).join('');
+    var html = '<div class="top"><a class="back" href="#/x/'+k+'/'+set.back+'">‹ '+esc(examMeta(k).short)+'</a>'+miniFlaskHtml(k)+'</div>'+
+      '<div class="qhead"><span class="title">'+esc(set.title)+'</span><span class="right">'+(combo>=2 ? '<span class="combo'+(comboBump?' bump':'')+'" title="Správně v řadě">★ '+combo+' v řadě</span>' : '')+'<span class="muted small">'+(pos+1)+' / '+set.list.length+'</span></span></div>'+
+      '<div class="chips" id="chips">'+chips+'</div>';
+    if(q.t==='c'){
+      var c = d.cases[q.k];
+      html += '<details class="ctx" open><summary>Zadání případové studie</summary><div class="case">'+esc(c.text)+'</div></details>';
+    }
+    html += '<div class="card"><div class="qid"><span>Otázka č. '+esc(q.id)+'</span><span>'+TYPE_NAMES[q.t]+'</span>'+
+      (x && !cur.checked ? '<span class="last '+(x[2]?'ok':'bad')+'">Minule '+(x[2]?'správně':'špatně')+(x[1]?', chyb celkem '+x[1]:'')+'</span>' : '')+'</div>'+
+      '<p class="qtext">'+esc(q.q)+'</p>'+
+      (q.t==='m' ? '<p class="hint">Vyberte všechny správné odpovědi.</p>' : '')+
+      optsHtml(q, cur, multi, 'o')+
+      feedbackHtml(q, cur)+
+      '<div class="actions">'+
+        '<button class="btn" id="prev"'+(pos===0?' disabled':'')+'>‹ Předchozí</button>'+
+        (cur.checked ? '<button class="btn" id="retry">Zkusit znovu</button>' : '<button class="btn primary" id="check"'+(cur.sel.length?'':' disabled')+'>Zkontrolovat</button>')+
+        '<span class="spacer"></span>'+
+        (pos<set.list.length-1 ? '<button class="btn'+(cur.checked?' primary':'')+'" id="next">Další ›</button>'
+          : (set.next ? '<a class="btn'+(cur.checked?' primary':'')+'" href="#/x/'+k+'/set/'+set.next+'">Další blok ›</a>' : '<a class="btn" href="#/x/'+k+'/'+set.back+'">Hotovo</a>'))+
+      '</div><p class="kbd">Klávesy: A–D vybere odpověď, Enter zkontroluje nebo přejde dál, šipky listují.</p></div>';
+    app.innerHTML = html;
+    var chipEl = app.querySelector('.chip.cur'); if(chipEl) chipEl.scrollIntoView({block:'nearest', inline:'center'});
+    bindOpts(app, q, cur, multi, render);
+    app.querySelectorAll('[data-go]').forEach(function(b){ b.onclick = function(){ go(+b.getAttribute('data-go')); }; });
+    var el;
+    if((el = document.getElementById('prev'))) el.onclick = function(){ go(pos-1); };
+    if((el = document.getElementById('next'))) el.onclick = function(){ go(pos+1); };
+    if((el = document.getElementById('retry'))) el.onclick = function(){ cur = {sel:[], checked:false, perm:null, prev:cp(ex.r[q.id])}; render(); };
+    if((el = document.getElementById('check'))) el.onclick = check;
+  }
+  function check(){
+    if(!cur.sel.length || cur.checked) return;
+    var q = d.questions[set.list[pos]];
+    cur.checked = true; cur.ok = sameSet(cur.sel, q.c);
+    var before = gameBefore(k);
+    record(k, q.id, cur.ok);
+    var c0 = applyCombo([cur.ok]);
+    render(); comboBump = false;
+    var f = app.querySelector('.verdict'); if(f) f.scrollIntoView({block:'nearest'});
+    gameAfter(k, before, f, c0);
+  }
+  keyHandler = function(ev){
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName) || ev.metaKey || ev.ctrlKey || ev.altKey || document.querySelector('.modal')) return;
+    var q = d.questions[set.list[pos]], key = ev.key.toUpperCase(), li = LETTERS.indexOf(key);
+    if(li<0 && /^[1-6]$/.test(ev.key)) li = +ev.key-1;
+    if(li>=0 && li<q.o.length && !cur.checked){ toggleSel(q, cur, cur.perm[li], q.c.length>1 || q.t==='m'); render(); ev.preventDefault(); }
+    else if(ev.key==='Enter' && document.activeElement && document.activeElement.tagName!=='A'){
+      if(document.activeElement.tagName==='BUTTON' && !document.activeElement.classList.contains('opt')) return;
+      ev.preventDefault(); if(!cur.checked) check(); else if(pos<set.list.length-1) go(pos+1);
+    }
+    else if(ev.key==='ArrowRight'){ go(pos+1); }
+    else if(ev.key==='ArrowLeft'){ go(pos-1); }
+  };
+  render();
+}
+
+/* shared option rendering */
+function toggleSel(q, cur, orig, multi){
+  var i = cur.sel.indexOf(orig);
+  if(multi){ if(i>=0) cur.sel.splice(i,1); else cur.sel.push(orig); }
+  else cur.sel = [orig];
+}
+function optsHtml(q, cur, multi, prefix){
+  var h = '<div class="opts" role="group">';
+  cur.perm.forEach(function(orig, n){
+    var chosen = cur.sel.indexOf(orig)>=0, right = q.c.indexOf(orig)>=0, cls = 'opt '+(multi?'multi':'single');
+    if(cur.checked){ if(chosen && right) cls += ' is-ok'; else if(chosen) cls += ' is-bad'; else if(right) cls += ' is-ok missed'; }
+    h += '<div role="button" tabindex="0" class="'+cls+'" data-'+prefix+'="'+orig+'" aria-pressed="'+chosen+'"'+(cur.checked?' aria-disabled="true"':'')+'><span class="l">'+LETTERS[n]+'</span><span class="tx">'+esc(q.o[orig])+'</span></div>';
+  });
+  return h + '</div>';
+}
+function feedbackHtml(q, cur){
+  if(!cur.checked) return '';
+  var letters = cur.perm.map(function(o, n){ return q.c.indexOf(o)>=0 ? LETTERS[n] : null; }).filter(Boolean).join(', ');
+  return '<p class="verdict '+(cur.ok?'ok':'bad')+'">'+(cur.ok ? 'Správně.' : 'Špatně. '+(q.c.length>1?'Správné odpovědi':'Správná odpověď')+': '+letters+'.')+'</p>'+
+    (q.e ? '<div class="expl"><b>Odůvodnění</b>'+esc(q.e)+'</div>' : '');
+}
+function bindOpts(root, q, cur, multi, rerender, prefix){
+  prefix = prefix || 'o';
+  root.querySelectorAll('[data-'+prefix+']').forEach(function(b){
+    b.onclick = function(){
+      if(cur.checked) return;
+      var sel = window.getSelection && window.getSelection();
+      if(sel && sel.toString().trim() && b.contains(sel.anchorNode)) return; // user is selecting text for dictionary
+      toggleSel(q, cur, +b.getAttribute('data-'+prefix), multi); rerender();
+      var again = root.querySelector('[data-'+prefix+'="'+b.getAttribute('data-'+prefix)+'"]'); if(again) again.focus({preventScroll:true});
+    };
+    b.onkeydown = function(ev){ if(ev.key===' '){ ev.preventDefault(); b.onclick(); } };
+  });
+}
+
+/* ---------- dictionary ---------- */
+var LANGS = [['ru','ruština'],['uk','ukrajinština'],['en','angličtina']];
+function tl(){ return state.settings.lang || 'ru'; }
+function dict(){ if(!state.dict) state.dict = []; return state.dict; }
+function dictLinkHtml(){ return '<a class="dictlink" href="#/slovnik">Slovník ('+dict().length+')</a>'; }
+function normTerm(t){ return t.replace(/\s+/g,' ').replace(/^[\s.,;:!?„“"'()«»–-]+|[\s.,;:!?„“"'()«»–-]+$/g,'').trim(); }
+
+/* Translation: Google Translate public endpoint first, MyMemory as fallback. No API key needed. */
+function translate(text, lang){
+  var q = encodeURIComponent(text);
+  function viaGoogle(){
+    return fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=cs&tl='+lang+'&dt=t&q='+q)
+      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .then(function(j){ var t = (j[0]||[]).map(function(x){ return x[0]; }).join('').trim(); if(!t) throw 0; return t; });
+  }
+  function viaMyMemory(){
+    return fetch('https://api.mymemory.translated.net/get?q='+q+'&langpair=cs|'+lang)
+      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .then(function(j){ var t = j && j.responseData && j.responseData.translatedText; if(!t || j.responseStatus!=200 || /MYMEMORY WARNING/i.test(t)) throw 0; return t.trim(); });
+  }
+  return viaGoogle().catch(viaMyMemory);
+}
+function extLinks(term, lang){
+  var e = encodeURIComponent(term), seznam = {ru:'cesky_rusky', en:'cesky_anglicky', uk:null}[lang];
+  return '<div class="ext"><a href="https://translate.google.com/?sl=cs&tl='+lang+'&text='+e+'" target="_blank" rel="noopener">Google Překladač</a>'+
+    (seznam ? '<a href="https://slovnik.seznam.cz/preklad/'+seznam+'/'+e+'" target="_blank" rel="noopener">Slovník Seznam</a>' : '')+
+    '<a href="https://www.deepl.com/translator#cs/'+lang+'/'+e+'" target="_blank" rel="noopener">DeepL</a></div>';
+}
+
+/* floating "add to dictionary" button on text selection */
+var selBtn = document.getElementById('selbtn'), selInfo = null, selTimer = null;
+function onSelection(){
+  var sel = window.getSelection();
+  if(!sel || sel.isCollapsed || !sel.rangeCount || document.querySelector('.modal')){ hideSel(); return; }
+  var text = normTerm(sel.toString());
+  var node = sel.anchorNode && (sel.anchorNode.nodeType===1 ? sel.anchorNode : sel.anchorNode.parentNode);
+  if(!text || text.length>200 || !node || !app.contains(node) || node.closest('input,textarea,.dictpage')){ hideSel(); return; }
+  var rect = sel.getRangeAt(0).getBoundingClientRect();
+  if(!rect.width && !rect.height){ hideSel(); return; }
+  var ctxEl = node.closest('.qtext,.opt,.case,.expl,.row,.snip,.ans li');
+  var ctx = ctxEl ? ctxEl.textContent.replace(/\s+/g,' ').trim() : '';
+  ctx = sentenceAround(ctx, text);
+  var h = location.hash.split('/');
+  selInfo = {text:text, ctx:ctx, ex:h[1]==='x' ? h[2] : null};
+  selBtn.style.display = 'block';
+  var bw = selBtn.offsetWidth;
+  var left = Math.max(8, Math.min(window.scrollX + rect.left + rect.width/2 - bw/2, window.scrollX + document.documentElement.clientWidth - bw - 8));
+  selBtn.style.left = left + 'px';
+  selBtn.style.top = (window.scrollY + rect.bottom + 10) + 'px';
+}
+function sentenceAround(text, term){
+  var i = text.toLowerCase().indexOf(term.toLowerCase());
+  if(i<0) return text.slice(0,220);
+  var dot = text.lastIndexOf('. ', i), start = Math.max(dot<0 ? 0 : dot+2, i-160), end = text.indexOf('. ', i+term.length);
+  end = end<0 ? Math.min(text.length, i+term.length+160) : Math.min(end+1, i+term.length+160);
+  return (start>0?'…':'') + text.slice(start, end).trim() + (end<text.length?'…':'');
+}
+function hideSel(){ selBtn.style.display = 'none'; }
+document.addEventListener('selectionchange', function(){ clearTimeout(selTimer); selTimer = setTimeout(onSelection, 250); });
+window.addEventListener('resize', hideSel);
+selBtn.addEventListener('mousedown', function(e){ e.preventDefault(); }); // keep selection
+selBtn.addEventListener('click', function(){
+  if(!selInfo) return;
+  var info = selInfo; hideSel();
+  if(window.getSelection) window.getSelection().removeAllRanges();
+  openWordDialog({cs:info.text, ctx:info.ctx, ex:info.ex});
+});
+
+function openWordDialog(entry, onSaved){
+  var lang = entry.lang || tl(), isNew = !entry.id;
+  var existing = isNew && dict().filter(function(w){ return w.cs.toLowerCase()===entry.cs.toLowerCase(); })[0];
+  if(existing){ entry = existing; isNew = false; }
+  var m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = '<div class="box" role="dialog" aria-modal="true" aria-labelledby="dlgT"><h2 id="dlgT">'+(isNew?'Přidat do slovníku':'Upravit slovíčko')+'</h2>'+
+    '<label class="field"><span>Česky</span><input id="wCs" value="'+esc(entry.cs)+'"></label>'+
+    '<label class="field"><span>Překlad ('+esc(LANGS.filter(function(l){return l[0]===lang;})[0][1])+')</span><textarea id="wTr" placeholder="Načítám překlad…">'+esc(entry.tr||'')+'</textarea></label>'+
+    '<div id="wExt">'+extLinks(entry.cs, lang)+'</div>'+
+    (entry.ctx ? '<p class="ctxline">'+esc(entry.ctx)+'</p>' : '')+
+    '<div class="actions"><button class="btn" id="wRe" type="button">Přeložit znovu</button><span class="spacer"></span><button class="btn" id="wCancel" type="button">Zrušit</button><button class="btn primary" id="wSave" type="button">Uložit</button></div></div>';
+  document.body.appendChild(m);
+  var cs = m.querySelector('#wCs'), tr = m.querySelector('#wTr');
+  function run(){
+    var term = normTerm(cs.value); if(!term) return;
+    tr.value = ''; tr.placeholder = 'Načítám překlad…';
+    m.querySelector('#wExt').innerHTML = extLinks(term, lang);
+    translate(term, lang).then(function(t){ if(!tr.value) tr.value = t; },
+      function(){ tr.placeholder = 'Automatický překlad se nepodařil. Napište překlad sami nebo použijte odkazy výše.'; });
+  }
+  function close(){ m.remove(); document.removeEventListener('keydown', onKey, true); }
+  function onKey(e){ if(e.key==='Escape'){ e.stopPropagation(); close(); } }
+  document.addEventListener('keydown', onKey, true);
+  m.addEventListener('click', function(e){ if(e.target===m) close(); });
+  m.querySelector('#wCancel').onclick = close;
+  m.querySelector('#wRe').onclick = run;
+  m.querySelector('#wSave').onclick = function(){
+    var term = normTerm(cs.value), t = tr.value.trim();
+    if(!term){ cs.focus(); return; }
+    if(isNew){ dict().unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6), cs:term, tr:t, lang:lang, ctx:entry.ctx||'', ex:entry.ex||null, t:Date.now(), k:0}); }
+    else { entry.cs = term; entry.tr = t; }
+    save(); close(); toast(isNew ? 'Uloženo do slovníku.' : 'Změny uloženy.');
+    refreshDictUI(); if(onSaved) onSaved();
+  };
+  if(!entry.tr) run();
+  setTimeout(function(){ (entry.tr ? tr : cs).focus(); }, 30);
+}
+function refreshDictUI(){
+  document.querySelectorAll('.dictlink').forEach(function(a){ a.textContent = 'Slovník ('+dict().length+')'; });
+  highlight(app);
+}
+
+/* underline saved words in question texts; hovering / tapping shows the translation */
+function stemRe(term){
+  var e = term.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\s+/g,'\\s+');
+  if(!/\s/.test(term) && term.length>=5){ var cut = term.length>=7 ? 2 : 1; e = e.slice(0, e.length-cut) + '\\p{L}{0,'+(cut+3)+'}'; }
+  try{ return new RegExp('(?<![\\p{L}\\p{N}])'+e+'(?![\\p{L}\\p{N}])', 'giu'); }
+  catch(_){ return new RegExp(e.replace(/\\p\{L\}/g,'[a-zá-žA-ZÁ-Ž]'), 'gi'); }
+}
+function highlight(root){
+  root.querySelectorAll('mark.dw').forEach(function(mk){ mk.replaceWith(document.createTextNode(mk.textContent)); });
+  root.querySelectorAll('.qtext,.opt .tx,.case,.expl,.ans .tx').forEach(function(el){ el.normalize(); });
+  var words = dict().filter(function(w){ return w.tr; }).slice().sort(function(a,b){ return b.cs.length-a.cs.length; });
+  if(!words.length) return;
+  var targets = root.querySelectorAll('.qtext,.opt .tx,.case,.expl,.ans .tx');
+  words.forEach(function(w){
+    var re = stemRe(w.cs);
+    targets.forEach(function(el){
+      var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {acceptNode:function(n){ return n.parentNode.closest('mark,h2,b') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }});
+      var nodes = []; while(walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach(function(n){
+        var t = n.nodeValue; re.lastIndex = 0; if(!re.test(t)) return;
+        re.lastIndex = 0; var frag = document.createDocumentFragment(), last = 0, m;
+        while((m = re.exec(t))){
+          if(!m[0]) { re.lastIndex++; continue; }
+          frag.appendChild(document.createTextNode(t.slice(last, m.index)));
+          var mk = document.createElement('mark'); mk.className = 'dw'; mk.tabIndex = 0; mk.setAttribute('data-tr', w.tr); mk.title = w.tr; mk.textContent = m[0];
+          frag.appendChild(mk); last = m.index + m[0].length;
+        }
+        frag.appendChild(document.createTextNode(t.slice(last)));
+        n.parentNode.replaceChild(frag, n);
+      });
+    });
+  });
+}
+// run after every screen render + add the dictionary link to top bars
+new MutationObserver(function(){
+  var top = app.querySelector('.top');
+  if(top && !top.querySelector('.dictlink')) top.insertAdjacentHTML('beforeend', dictLinkHtml());
+  if(!app.querySelector('.dictpage')) highlight(app);
+  animateFlasks(app);
+  hideSel();
+}).observe(app, {childList:true});
+
+function viewDict(){
+  var list = dict(), q = viewDict.q || '';
+  var html = '<div class="dictpage"><div class="top"><a class="back" href="#/">‹ Všechny zkoušky</a></div>'+
+    '<h1>Můj slovník</h1>'+
+    '<p class="lead">Slovíčko přidáte tak, že v otázce označíte slovo nebo frázi a kliknete na „+ Do slovníku“. Uložená slova jsou pak v otázkách podtržená a po najetí nebo klepnutí ukážou překlad.</p>'+
+    '<div class="actions" style="margin:0 0 14px"><button class="btn" id="dAdd">+ Přidat ručně</button>'+
+    (list.length ? '<a class="btn primary" href="#/slovnik/karticky">Procvičit kartičky ('+list.length+')</a>' : '')+'</div>'+
+    (list.length ? '<input class="search" id="dQ" type="search" placeholder="Hledat ve slovníku" value="'+esc(q)+'">' : '')+
+    '<div class="words" id="dList"></div></div>';
+  app.innerHTML = html;
+  function draw(){
+    var f = (viewDict.q||'').toLowerCase(), items = list.filter(function(w){ return !f || w.cs.toLowerCase().indexOf(f)>=0 || (w.tr||'').toLowerCase().indexOf(f)>=0; });
+    var el = document.getElementById('dList');
+    if(!list.length){ el.innerHTML = '<div class="empty"><p>Slovník je zatím prázdný. Otevřete libovolnou otázku, označte neznámé slovo a přidejte ho.</p></div>'; return; }
+    el.innerHTML = items.map(function(w){
+      return '<div class="word"><span class="cs">'+esc(w.cs)+'</span><span class="tr">'+(w.tr ? esc(w.tr) : '<span class="muted">bez překladu</span>')+(w.k>=2?' <span class="known">umím</span>':'')+'</span>'+
+        '<span class="btns"><button class="iconbtn" data-edit="'+w.id+'" aria-label="Upravit">Upravit</button><button class="iconbtn" data-del="'+w.id+'" aria-label="Smazat">Smazat</button></span>'+
+        (w.ctx ? '<span class="ex">'+esc(w.ctx)+'</span>' : '')+'</div>';
+    }).join('') || '<p class="muted">Nic nenalezeno.</p>';
+    el.querySelectorAll('[data-edit]').forEach(function(b){ b.onclick = function(){ var w = find(b.getAttribute('data-edit')); if(w) openWordDialog(w, draw); }; });
+    el.querySelectorAll('[data-del]').forEach(function(b){ b.onclick = function(){
+      var w = find(b.getAttribute('data-del')); if(!w || !confirm('Smazat „'+w.cs+'“ ze slovníku?')) return;
+      state.dict = list = list.filter(function(x){ return x!==w; }); save(); viewDict();
+    }; });
+  }
+  function find(id){ return list.filter(function(w){ return w.id===id; })[0]; }
+  draw();
+  var qi = document.getElementById('dQ'); if(qi) qi.oninput = function(){ viewDict.q = this.value; draw(); };
+  document.getElementById('dAdd').onclick = function(){ openWordDialog({cs:''}, viewDict); };
+}
+
+function viewFlash(){
+  var list = dict().filter(function(w){ return w.tr; });
+  if(!list.length){ location.hash = '#/slovnik'; return; }
+  // words you don't know yet come first, shuffled
+  var order = list.slice().sort(function(a,b){ return (a.k||0)-(b.k||0) || Math.random()-.5; });
+  var i = 0, shown = false;
+  function render(){
+    var w = order[i];
+    app.innerHTML = '<div class="dictpage"><div class="top"><a class="back" href="#/slovnik">‹ Slovník</a></div>'+
+      '<div class="qhead"><span class="title">Kartičky</span><span class="muted small">'+(i+1)+' / '+order.length+'</span></div>'+
+      '<div class="flash"><div class="cs">'+esc(w.cs)+'</div>'+
+      (shown ? '<div class="tr">'+esc(w.tr)+'</div>'+(w.ctx?'<div class="ex">'+esc(w.ctx)+'</div>':'') : '')+'</div>'+
+      '<div class="actions">'+(shown
+        ? '<button class="btn" id="fNo">Ještě neumím</button><span class="spacer"></span><button class="btn primary" id="fYes">Umím</button>'
+        : '<button class="btn primary" id="fShow" style="flex:1;justify-content:center">Ukázat překlad</button>')+'</div></div>';
+    var el;
+    if((el = document.getElementById('fShow'))) el.onclick = function(){ shown = true; render(); };
+    if((el = document.getElementById('fYes'))) el.onclick = function(){ w.k = (w.k||0)+1; save(); next(); };
+    if((el = document.getElementById('fNo'))) el.onclick = function(){ w.k = 0; save(); next(); };
+  }
+  function next(){
+    if(i < order.length-1){ i++; shown = false; render(); }
+    else { app.innerHTML = '<div class="dictpage"><div class="top"><a class="back" href="#/slovnik">‹ Slovník</a></div><div class="empty"><p>Prošla jste všechna slovíčka.</p><div class="actions" style="justify-content:center"><a class="btn" href="#/slovnik">Zpět do slovníku</a><button class="btn primary" id="fAgain">Znovu</button></div></div></div>';
+      document.getElementById('fAgain').onclick = viewFlash; }
+  }
+  keyHandler = function(ev){
+    if(document.querySelector('.modal')) return;
+    if(ev.key===' ' || ev.key==='Enter'){ ev.preventDefault(); if(!shown){ shown = true; render(); } else document.getElementById('fYes').click(); }
+  };
+  render();
+}
+
+/* ---------- case study ---------- */
+function viewCase(k, d, ci){
+  var c = d.cases[ci];
+  if(!c){ location.hash = '#/x/'+k+'/types'; return; }
+  var ex = exState(k);
+  var curs = c.qs.map(function(qi){ return {sel:[], checked:false, perm:perm(d.questions[qi].o.length, d.questions[qi].id)}; });
+  var done = false;
+  var prevStat = stat(k, c.qs.map(function(qi){ return d.questions[qi].id; }));
+  function render(){
+    var y = window.scrollY;
+    var s = prevStat;
+    var html = '<div class="top"><a class="back" href="#/x/'+k+'/types">‹ '+esc(examMeta(k).short)+'</a>'+miniFlaskHtml(k)+'</div>'+
+      '<div class="qhead"><span class="title">Případová studie '+(ci+1)+' z '+d.cases.length+'</span>'+
+      (s.a ? '<span class="last '+(s.g===s.n?'ok':'bad')+'">Minule '+s.g+' z '+s.n+' správně</span>' : '')+'</div>'+
+      '<div class="case"><h2>Zadání</h2>'+esc(c.text)+'</div>';
+    c.qs.forEach(function(qi, n){
+      var q = d.questions[qi], cur = curs[n], multi = q.c.length>1;
+      html += '<div class="card cq" id="cq'+n+'"><div class="num">Otázka '+(n+1)+' z '+c.qs.length+'</div>'+
+        '<p class="qtext">'+esc(q.q)+'</p>'+optsHtml(q, cur, multi, 'o'+n)+feedbackHtml(q, cur)+'</div>';
+    });
+    var answered = curs.filter(function(x){ return x.sel.length; }).length;
+    if(done){
+      var ok = curs.filter(function(x){ return x.ok; }).length;
+      html += '<p class="score">Výsledek: '+ok+' z '+c.qs.length+' správně.</p>';
+    }
+    html += '<div class="actions">'+
+      (ci>0 ? '<a class="btn" href="#/x/'+k+'/case/'+(ci-1)+'">‹ Předchozí studie</a>' : '')+
+      (done ? '<button class="btn" id="retry">Zkusit znovu</button>' : '<button class="btn primary" id="checkAll"'+(answered?'':' disabled')+'>Zkontrolovat ('+answered+' / '+c.qs.length+')</button>')+
+      '<span class="spacer"></span>'+
+      (ci<d.cases.length-1 ? '<a class="btn'+(done?' primary':'')+'" href="#/x/'+k+'/case/'+(ci+1)+'">Další studie ›</a>' : '<a class="btn" href="#/x/'+k+'/types">Hotovo</a>')+
+      '</div>';
+    app.innerHTML = html;
+    window.scrollTo(0, y);
+    c.qs.forEach(function(qi, n){
+      var q = d.questions[qi];
+      bindOpts(app, q, curs[n], q.c.length>1, render, 'o'+n);
+    });
+    var el;
+    if((el = document.getElementById('checkAll'))) el.onclick = function(){
+      if(answered < c.qs.length && !confirm('Nezodpověděli jste všech '+c.qs.length+' otázek. Nezodpovězené se započítají jako chyba. Zkontrolovat přesto?')) return;
+      var before = gameBefore(k);
+      curs.forEach(function(cur, n){
+        var q = d.questions[c.qs[n]];
+        cur.checked = true; cur.ok = sameSet(cur.sel, q.c); record(k, q.id, cur.ok);
+      });
+      var c0 = applyCombo(curs.map(function(x){ return x.ok; }));
+      done = true; render(); comboBump = false;
+      var sc = app.querySelector('.score'); if(sc) sc.scrollIntoView({block:'center'});
+      gameAfter(k, before, sc, c0);
+    };
+    if((el = document.getElementById('retry'))) el.onclick = function(){
+      curs = c.qs.map(function(qi){ return {sel:[], checked:false, perm:perm(d.questions[qi].o.length, d.questions[qi].id)}; });
+      done = false; prevStat = stat(k, c.qs.map(function(qi){ return d.questions[qi].id; })); render(); window.scrollTo(0,0);
+    };
+  }
+  render();
+}
+
+/* ===================== GAME ===================== */
+var REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function game(){
+  if(!state.game) state.game = {};
+  var g = state.game; g.passed = g.passed||{}; g.days = g.days||{}; g.seen = g.seen||{}; g.goal = g.goal||20; g.best = g.best||0;
+  return g;
+}
+function dayKey(d){ d = d||new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function todayCount(){ return game().days[dayKey()]||0; }
+function streak(){
+  var g = game(), d = new Date(), n = 0;
+  if(!g.days[dayKey(d)]) d.setDate(d.getDate()-1);
+  while(g.days[dayKey(d)]){ n++; d.setDate(d.getDate()-1); }
+  return n;
+}
+var combo = 0, comboBump = false;
+
+/* levels: share of questions whose last answer was correct */
+var LEVELS = [
+  {t:0,    n:'Prázdná baňka', c:'#9DB4C9'},
+  {t:0.01, n:'První kapky',   c:'#7CC0F0'},
+  {t:0.05, n:'Pramínek',      c:'#55A8EA'},
+  {t:0.10, n:'Potůček',       c:'#3B8FDB'},
+  {t:0.20, n:'Říčka',         c:'#2C76C8'},
+  {t:0.35, n:'Řeka',          c:'#2464B8'},
+  {t:0.50, n:'Jezero',        c:'#1D8FA0'},
+  {t:0.65, n:'Moře',          c:'#16A08A'},
+  {t:0.80, n:'Oceán',         c:'#22B06A'},
+  {t:0.95, n:'Zkouška na dosah', c:'#D4A22B'}
+];
+function totalQ(k){ var e = examMeta(k); return e.s+e.m+e.cq; }
+function masteredN(k){ var r = exState(k).r, n = 0; for(var id in r) if(r[id][2]) n++; return n; }
+function frac(k){ return Math.min(1, masteredN(k)/totalQ(k)); }
+function lvlIdx(f){ var i = 0; for(var j=0;j<LEVELS.length;j++) if(f >= LEVELS[j].t - 1e-9) i = j; return i; }
+
+/* ---------- flask svg ---------- */
+var FLASK = 'M47 12 V70 L10 170 Q4 188 22 190 H98 Q116 188 110 170 L73 70 V12 Z';
+var uidN = 0;
+function liqY(f){ return f<=0 ? 205 : 188 - f*176; }
+function flaskSvg(fromF, toF, opts){
+  opts = opts||{}; var id = 'fk'+(++uidN), li = lvlIdx(toF), col = LEVELS[li].c;
+  var ticks = '';
+  if(opts.ticks) LEVELS.forEach(function(L, i){ if(!i) return; var y = liqY(L.t);
+    ticks += '<line x1="'+(i%2?52:50)+'" x2="'+(i%2?68:70)+'" y1="'+y+'" y2="'+y+'" stroke="currentColor" stroke-opacity=".28" stroke-width="1.5"/>'+
+      (i%3===0 ? '<text x="'+(i%2?71:73)+'" y="'+(y+3)+'" font-size="8" fill="currentColor" fill-opacity=".45" font-family="var(--sans)">'+(i+1)+'</text>' : ''); });
+  return '<svg viewBox="0 0 120 200" role="img" aria-label="Zvládnuto '+Math.floor(toF*100)+' %">'+
+    '<defs><clipPath id="'+id+'"><path d="'+FLASK+'"/></clipPath>'+
+    '<linearGradient id="'+id+'g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity=".85"/><stop offset="1" stop-color="'+col+'"/></linearGradient></defs>'+
+    '<path d="'+FLASK+'" fill="var(--bg)"/>'+
+    '<g clip-path="url(#'+id+')"><g class="liq" style="transform:translateY('+liqY(fromF)+'px)" data-to="'+liqY(toF)+'">'+
+      '<path class="wave back" d="M-240 0 Q-210 -7 -180 0 T-120 0 T-60 0 T0 0 T60 0 T120 0 T180 0 T240 0 V220 H-240 Z" fill="'+col+'"/>'+
+      '<path class="wave" d="M-240 2 Q-210 -5 -180 2 T-120 2 T-60 2 T0 2 T60 2 T120 2 T180 2 T240 2 V220 H-240 Z" fill="url(#'+id+'g)"/>'+
+      (opts.bubbles ? [[38,3,0],[58,2.2,1.2],[74,3.2,2.1],[86,2,.6],[50,1.8,2.8]].map(function(b){ return '<circle class="bub" cx="'+b[0]+'" cy="'+(26+b[1]*4)+'" r="'+b[1]+'" fill="#fff" fill-opacity=".7" style="animation-delay:'+b[2]+'s"/>'; }).join('') : '')+
+    '</g></g>'+ticks+
+    '<path d="'+FLASK+'" fill="none" stroke="currentColor" stroke-opacity=".6" stroke-width="3.5" stroke-linejoin="round"/>'+
+    '<rect x="42" y="4" width="36" height="9" rx="3.5" fill="var(--surface)" stroke="currentColor" stroke-opacity=".6" stroke-width="3"/>'+
+    '<path d="M54 18 V72 L22 152" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="3.5" stroke-linecap="round"/>'+
+  '</svg>';
+}
+function miniFlaskSvg(fromF, toF){
+  var col = LEVELS[lvlIdx(toF)].c, id = 'mf'+(++uidN);
+  return '<svg viewBox="0 0 120 200" aria-hidden="true"><defs><clipPath id="'+id+'"><path d="'+FLASK+'"/></clipPath></defs>'+
+    '<g clip-path="url(#'+id+')"><rect class="liq" x="0" y="0" width="120" height="220" fill="'+col+'" style="transform:translateY('+liqY(fromF)+'px)" data-to="'+liqY(toF)+'"/></g>'+
+    '<path d="'+FLASK+'" fill="none" stroke="currentColor" stroke-width="12" stroke-linejoin="round"/></svg>';
+}
+function animateFlasks(root){
+  var els = root.querySelectorAll('.liq[data-to]');
+  if(!els.length) return;
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    els.forEach(function(el){ el.style.transform = 'translateY('+el.getAttribute('data-to')+'px)'; el.removeAttribute('data-to'); });
+  }); });
+}
+function countUp(el, from, to, ms){
+  if(!el) return;
+  if(REDUCED || from===to){ el.textContent = to; return; }
+  var t0 = performance.now();
+  (function step(t){ var p = Math.min(1, (t-t0)/ms); p = 1-Math.pow(1-p,3); el.textContent = Math.round(from+(to-from)*p); if(p<1) requestAnimationFrame(step); })(t0);
+}
+
+/* exam page flask card */
+function flaskCardHtml(k){
+  var g = game(), f = frac(k), from = g.seen[k]!=null ? Math.min(g.seen[k], f) : 0, li = lvlIdx(f), n = masteredN(k), tot = totalQ(k);
+  var next = LEVELS[li+1], need = next ? Math.max(1, Math.ceil(next.t*tot) - n) : 0;
+  var ladder = LEVELS.map(function(L, i){
+    return '<li class="'+(i<=li?'got':'')+(i===li?' now':'')+'" style="--lc:'+L.c+'"><span class="dot"></span><span>'+(i+1)+'. '+L.n+'</span><span class="th">'+Math.round(L.t*100)+' %</span></li>';
+  }).reverse().join('');
+  return '<aside class="flaskcard" data-k="'+k+'">'+
+    '<div class="fl">'+flaskSvg(from, f, {ticks:true, bubbles:true})+'</div>'+
+    '<div><div class="lvlno">Úroveň '+(li+1)+' z '+LEVELS.length+'</div><div class="lvlname">'+LEVELS[li].n+'</div></div>'+
+    '<div class="lvlpct"><b class="cnt" data-from="'+Math.floor(from*100)+'">'+Math.floor(f*100)+'</b> % zvládnuto</div>'+
+    '<div class="lvlnext">'+n+' z '+tot+' otázek naposledy správně.<br>'+(next ? 'Do úrovně '+(li+2)+' zbývá '+need+' '+plural(need,'otázka','otázky','otázek')+'.' : 'Nejvyšší úroveň. Hodně štěstí u zkoušky!')+'</div>'+
+    '<details class="ladder"><summary>Všechny úrovně</summary><ol>'+ladder+'</ol></details>'+
+  '</aside>';
+}
+function afterFlaskCard(k){
+  var card = app.querySelector('.flaskcard'); if(!card) return;
+  var g = game(), f = frac(k), prev = g.seen[k];
+  var cnt = card.querySelector('.cnt'); countUp(cnt, +cnt.getAttribute('data-from'), Math.floor(f*100), 1700);
+  if(window.matchMedia('(min-width:920px)').matches) card.querySelector('.ladder').open = true;
+  if(prev!=null && lvlIdx(f) > lvlIdx(prev)){
+    setTimeout(function(){ var r = card.querySelector('.fl').getBoundingClientRect(); confettiBurst(r.left+r.width/2, r.top+r.height*0.4, 90); }, 1300);
+  }
+  g.seen[k] = f; save();
+}
+
+/* mini flask for the question view */
+var miniSeen = {};
+function miniFlaskHtml(k){
+  var f = frac(k), from = miniSeen[k]!=null ? miniSeen[k] : f, li = lvlIdx(f);
+  miniSeen[k] = f;
+  return '<a class="miniflask'+(from<f?' bump':'')+'" href="#/x/'+k+'/types" title="Úroveň '+(li+1)+': '+LEVELS[li].n+'">'+miniFlaskSvg(from, f)+'<span>Úr. '+(li+1)+'</span><span class="mp">'+Math.floor(f*100)+' %</span></a>';
+}
+
+/* ---------- celebrations after answering ---------- */
+function gameBefore(k){ return {lvl:lvlIdx(frac(k)), day:todayCount()}; }
+function applyCombo(results){
+  var c0 = combo, g = game();
+  results.forEach(function(ok){ combo = ok ? combo+1 : 0; });
+  comboBump = combo > c0 && combo >= 2;
+  if(combo > g.best){ g.best = combo; save(); }
+  return c0;
+}
+function gameAfter(k, before, originEl, c0){
+  var g = game(), comboHit = 0;
+  [5,10,20,30,50,75,100,150,200].forEach(function(m){ if(combo>=m && c0<m) comboHit = m; });
+  var o = originEl && originEl.getBoundingClientRect(), ox = o ? o.left+o.width/2 : innerWidth/2, oy = o ? o.top+o.height/2 : innerHeight/3;
+  var li = lvlIdx(frac(k)), day = todayCount();
+  if(li > before.lvl) showLevelUp(k, li);
+  else if(before.day < g.goal && day >= g.goal){ confettiBurst(ox, oy, 70); toast('Denní cíl splněn: '+g.goal+' otázek. Skvělá práce!'); }
+  else if(comboHit){ confettiBurst(ox, oy, 26 + Math.min(comboHit, 50)); toast(comboHit+' správně v řadě!'); }
+}
+function showLevelUp(k, li){
+  var L = LEVELS[li], el = document.createElement('div');
+  el.className = 'levelup'; el.setAttribute('role','status');
+  el.innerHTML = '<div class="lu"><div style="color:var(--ink)">'+flaskSvg(LEVELS[Math.max(0,li-1)].t, L.t, {bubbles:true})+'</div><div class="t1">Nová úroveň v '+esc(examMeta(k).short)+'</div><div class="t2">'+(li+1)+'. '+L.n+'</div><div class="t3">Zvládnuto přes '+Math.round(L.t*100)+' % otázek</div></div>';
+  document.body.appendChild(el); animateFlasks(el);
+  var r = el.querySelector('.lu').getBoundingClientRect();
+  confettiBurst(r.left+r.width/2, r.top+20, 140);
+  var gone = false;
+  function close(){ if(gone) return; gone = true; el.classList.add('out'); setTimeout(function(){ el.remove(); }, 350); }
+  el.addEventListener('click', close); setTimeout(close, 3200);
+}
+
+/* ---------- confetti ---------- */
+var CONF_COLORS = ['#D4A22B','#F7DE8E','#1D4E89','#55A8EA','#22B06A','#E2566F','#9B6BD6','#F28C38'];
+var parts = [], confCanvas = null, confRun = false;
+function confCtx(){
+  if(!confCanvas){ confCanvas = document.createElement('canvas'); confCanvas.id = 'confetti'; document.body.appendChild(confCanvas); }
+  var dpr = Math.min(2, window.devicePixelRatio||1);
+  if(confCanvas.width !== innerWidth*dpr || confCanvas.height !== innerHeight*dpr){ confCanvas.width = innerWidth*dpr; confCanvas.height = innerHeight*dpr; }
+  var c = confCanvas.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); return c;
+}
+function addPart(x, y, vx, vy){
+  parts.push({x:x, y:y, vx:vx, vy:vy, r:Math.random()*Math.PI*2, vr:(Math.random()-.5)*0.35, w:6+Math.random()*7, h:4+Math.random()*5,
+    c:CONF_COLORS[Math.floor(Math.random()*CONF_COLORS.length)], s:Math.random()<.25 ? 1 : 0, fl:Math.random()*10, fs:.08+Math.random()*.12, life:0});
+}
+function confettiBurst(x, y, n){
+  if(REDUCED) return;
+  for(var i=0;i<n;i++){ var a = -Math.PI/2 + (Math.random()-.5)*Math.PI*1.1, sp = 7 + Math.random()*9; addPart(x, y, Math.cos(a)*sp, Math.sin(a)*sp); }
+  runConf();
+}
+function confettiRain(n, ms){
+  if(REDUCED) return;
+  var t0 = performance.now(), made = 0;
+  (function drop(t){ var want = Math.floor(n * Math.min(1,(t-t0)/ms)); for(; made<want; made++) addPart(Math.random()*innerWidth, -20, (Math.random()-.5)*3, 2+Math.random()*3); runConf(); if(made<n) requestAnimationFrame(drop); })(t0);
+}
+function runConf(){
+  if(confRun) return; confRun = true;
+  var last = performance.now();
+  (function frame(t){
+    var dt = Math.min(2.5, (t-last)/16.67); last = t;
+    var c = confCtx(); c.clearRect(0,0,innerWidth,innerHeight);
+    parts = parts.filter(function(p){ return p.y < innerHeight+40 && p.life < 420; });
+    parts.forEach(function(p){
+      p.life += dt; p.vy += 0.32*dt; p.vx *= Math.pow(0.985, dt); p.vy *= Math.pow(0.985, dt); if(p.vy > 6) p.vy = 6;
+      p.x += p.vx*dt + Math.sin(p.fl)*0.6; p.y += p.vy*dt; p.r += p.vr*dt; p.fl += p.fs*dt;
+      c.save(); c.translate(p.x, p.y); c.rotate(p.r); c.scale(1, Math.cos(p.fl*2)); c.fillStyle = p.c;
+      if(p.s){ c.beginPath(); c.arc(0,0,p.h/1.6,0,Math.PI*2); c.fill(); } else c.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      c.restore();
+    });
+    if(parts.length) requestAnimationFrame(frame);
+    else { confRun = false; if(confCanvas){ confCanvas.remove(); confCanvas = null; } }
+  })(last);
+}
+
+/* ---------- medals ---------- */
+var MEDALS = {
+  poj:{name:'Pojištění', rib:['#1D4E89','#7CC0F0'], em:'<path d="M20 2 L36 8 V19 C36 29 29 35.5 20 39 C11 35.5 4 29 4 19 V8 Z" fill="var(--e1)"/><path d="M12.5 20 L18 25.5 L28 14" fill="none" stroke="var(--e2)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>'},
+  inv:{name:'Investice', rib:['#16A08A','#B9E8D9'], em:'<rect x="4" y="25" width="7" height="12" rx="1.5" fill="var(--e1)"/><rect x="16.5" y="18" width="7" height="19" rx="1.5" fill="var(--e1)"/><rect x="29" y="10" width="7" height="27" rx="1.5" fill="var(--e1)"/><path d="M4 17 L15 9 L23 13 L35 3" fill="none" stroke="var(--e2)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M28 2.5 H36 V10" fill="none" stroke="var(--e2)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'},
+  uve:{name:'Úvěry', rib:['#9B4DCA','#E5C9F5'], em:'<path d="M3 19 L20 4 L37 19" fill="none" stroke="var(--e2)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 17 V37 H32 V17 L20 7 Z" fill="var(--e1)"/><rect x="16" y="24" width="8" height="13" rx="1" fill="var(--e2)"/><rect x="27" y="5" width="4.5" height="9" fill="var(--e1)"/>'},
+  pen:{name:'Penze', rib:['#D2583D','#F8CDBF'], em:'<path d="M8 3 H32 M8 37 H32" stroke="var(--e2)" stroke-width="3.6" stroke-linecap="round"/><path d="M11 4 C11 14 18 16 18 20 C18 24 11 26 11 36 H29 C29 26 22 24 22 20 C22 16 29 14 29 4 Z" fill="var(--e1)"/><path d="M14 35 C15 29 25 29 26 35 Z M15.5 9 H24.5 C23 13 21 14 20 15.5 C19 14 17 13 15.5 9 Z" fill="var(--e2)"/>'}
+};
+function medalSvg(k){
+  var M = MEDALS[k], id = 'md'+k;
+  return '<svg viewBox="0 0 160 196" aria-hidden="true">'+
+    '<defs><radialGradient id="'+id+'o" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#FFF4C7"/><stop offset=".35" stop-color="#F2CB5A"/><stop offset=".75" stop-color="#C38E1E"/><stop offset="1" stop-color="#8C6512"/></radialGradient>'+
+    '<linearGradient id="'+id+'i" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E7B83D"/><stop offset="1" stop-color="#A57614"/></linearGradient>'+
+    '<clipPath id="'+id+'c"><circle cx="80" cy="128" r="60"/></clipPath>'+
+    '<linearGradient id="'+id+'s" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>'+
+    '<path d="M38 0 H70 L92 86 H60 Z" fill="'+M.rib[0]+'"/><path d="M48 0 H58 L80 86 H70 Z" fill="'+M.rib[1]+'" opacity=".9"/>'+
+    '<path d="M122 0 H90 L68 86 H100 Z" fill="'+M.rib[0]+'"/><path d="M112 0 H102 L80 86 H90 Z" fill="'+M.rib[1]+'" opacity=".9"/>'+
+    '<circle cx="80" cy="128" r="60" fill="url(#'+id+'o)"/>'+
+    '<circle cx="80" cy="128" r="60" fill="none" stroke="#7A560C" stroke-opacity=".35" stroke-width="2"/>'+
+    '<circle cx="80" cy="128" r="47" fill="url(#'+id+'i)" stroke="#FFE9A6" stroke-opacity=".7" stroke-width="2.5"/>'+
+    '<circle cx="80" cy="128" r="53" fill="none" stroke="#7A560C" stroke-opacity=".35" stroke-width="1.2" stroke-dasharray="2 4"/>'+
+    '<g transform="translate(56 104) scale(1.2)" style="--e1:#FFF1C4;--e2:#8C6512">'+M.em+'</g>'+
+    '<g clip-path="url(#'+id+'c)"><rect class="shine" x="20" y="60" width="38" height="140" fill="url(#'+id+'s)" transform="rotate(20 80 128)"/></g>'+
+  '</svg>';
+}
+function fmtDate(ts){ var d = new Date(ts); return d.getDate()+'. '+(d.getMonth()+1)+'. '+d.getFullYear(); }
+function medalHtml(e){
+  var won = game().passed[e.key];
+  return '<div class="medal'+(won?' won':'')+'" data-k="'+e.key+'">'+medalSvg(e.key)+'<div class="mname">'+MEDALS[e.key].name+'</div>'+
+    (won ? '<div class="mdate">Složeno '+fmtDate(won)+'</div>' : '<button class="pass" type="button" data-pass="'+e.key+'">Složeno</button>')+'</div>';
+}
+function allWon(){ var p = game().passed; return EXAMS.every(function(e){ return p[e.key]; }); }
+function medalsHtml(){
+  return '<section class="medals" aria-label="Moje medaile">'+EXAMS.map(medalHtml).join('')+'</section>'+
+    (allWon() ? '<p class="allwon">Všechny čtyři zkoušky jsou složené. Gratulujeme!</p>' : '');
+}
+function bindMedals(){
+  app.querySelectorAll('[data-pass]').forEach(function(b){ b.onclick = function(){ passExam(b.getAttribute('data-pass')); }; });
+}
+function redrawMedals(){
+  var sec = app.querySelector('.medals'); if(!sec) return;
+  var wrapEl = document.createElement('div'); wrapEl.innerHTML = medalsHtml();
+  var aw = app.querySelector('.allwon'); if(aw) aw.remove();
+  sec.replaceWith.apply(sec, Array.prototype.slice.call(wrapEl.childNodes));
+  bindMedals();
+}
+function passExam(k){
+  var g = game(); g.passed[k] = Date.now(); save();
+  redrawMedals();
+  var m = app.querySelector('.medal[data-k="'+k+'"]'); m.classList.add('popping');
+  var r = m.querySelector('svg').getBoundingClientRect();
+  setTimeout(function(){ confettiBurst(r.left+r.width/2, r.top+r.height*0.62, 160); }, 380);
+  if(allWon()) setTimeout(function(){ confettiRain(260, 2200); }, 900);
+  actionToast(allWon() ? 'Všechny čtyři medaile! Gratulujeme!' : 'Medaile „'+MEDALS[k].name+'“ je vaše!', 'Vrátit', function(){ delete game().passed[k]; save(); redrawMedals(); });
+}
+var atoastEl = null, atoastT = null;
+function actionToast(msg, label, fn){
+  if(atoastEl) atoastEl.remove(); clearTimeout(atoastT);
+  atoastEl = document.createElement('div'); atoastEl.className = 'atoast'; atoastEl.setAttribute('role','status');
+  atoastEl.innerHTML = '<span>'+esc(msg)+'</span><button type="button">'+esc(label)+'</button>';
+  document.body.appendChild(atoastEl);
+  var el = atoastEl;
+  el.querySelector('button').onclick = function(){ fn(); el.remove(); };
+  atoastT = setTimeout(function(){ el.remove(); }, 7000);
+}
+
+/* ---------- daily strip on home ---------- */
+function dailyHtml(){
+  var g = game(), n = todayCount(), goal = g.goal, p = Math.min(1, n/goal), C = 2*Math.PI*19, st = streak();
+  return '<section class="daily">'+
+    '<div class="dcard"><svg class="ring'+(p>=1?' done':'')+'" viewBox="0 0 46 46"><circle class="bg" cx="23" cy="23" r="19"/><circle class="fg" cx="23" cy="23" r="19" stroke-dasharray="'+C+'" stroke-dashoffset="'+C+'" data-off="'+(C*(1-p))+'" transform="rotate(-90 23 23)"/></svg>'+
+      '<div><div class="big">'+n+' / '+goal+'</div><div class="sub">'+(p>=1?'Denní cíl splněn':'Dnešní cíl otázek')+'</div></div></div>'+
+    '<div class="dcard"><svg class="flame'+(st?'':' off')+'" viewBox="0 0 30 38" aria-hidden="true"><path d="M15 1 C17 9 26 13 26 24 A11 11 0 0 1 4 24 C4 17 8 14 10 9 C11 14 13 15 14 15 C15 10 13 6 15 1 Z" fill="#F28C38"/><path d="M15 17 C16 21 20 23 20 28 A5 5 0 0 1 10 28 C10 24 13 22 15 17 Z" fill="#F7DE8E"/></svg>'+
+      '<div><div class="big">'+st+' '+plural(st,'den','dny','dní')+'</div><div class="sub">'+(st ? (todayCount() ? 'v řadě se učíte' : 'v řadě – dnes ještě pokračujte') : 'Série dnů začne první otázkou')+'</div></div></div>'+
+    '<div class="dcard"><svg class="flame" viewBox="0 0 30 38" aria-hidden="true"><path d="M15 2 L18.5 12.5 H29 L20.5 19 L23.8 30 L15 23.5 L6.2 30 L9.5 19 L1 12.5 H11.5 Z" fill="var(--gold)"/></svg>'+
+      '<div><div class="big">'+g.best+'</div><div class="sub">Nejdelší série správných odpovědí</div></div></div>'+
+  '</section>';
+}
+function animateRings(){
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    app.querySelectorAll('.ring .fg[data-off]').forEach(function(c){ c.style.strokeDashoffset = c.getAttribute('data-off'); });
+  }); });
+}
+
+document.addEventListener('keydown', function(ev){ if(keyHandler) keyHandler(ev); });
+route();
+})();
+</script>
+</body>
+</html>
